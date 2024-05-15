@@ -1,30 +1,80 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet,Picker,x Image } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import axios from 'axios'
+import dotenv from 'dotenv'
+// import nodemailer from 'nodemailer'
+import API from '../config';
+// import product from '../meta'
 
 const LoginScreen = () => {
   const navigation = useNavigation();
-
+  const [selectedValue, setSelectedValue] = useState('');
+  
   const [rollNo, setRollNo] = useState('');
   const [password, setPassword] = useState('');
+  useEffect(()=>{
+    console.log(12)
+  },[])
 
-  const handleLogin = () => {
+  const handleLogin = async () => {
     if (!rollNo || !password) {
       alert('Please enter both Roll No and Password');
       return;
     }
 
-    // Add your login logic here
-    console.log('Roll No:', rollNo);
-    console.log('Password:', password);
+    // console.log('Roll No:', rollNo);
+    // console.log('Password:', password);
+    let student={'rollNumber':`${rollNo}`,'password':`${password}`}
 
-    if (rollNo === '2020' && password === 'admin') {
-      // Navigate to admin screen
-      navigation.navigate('AdminHome');
-    } else {
-      // Navigate to user home screen
-      navigation.navigate('Home', { username: "Guest" });
+    const checkUser = async ()=> {
+      var result = await axios.post(`${API}/students/login`,student)
+      console.log(result.data)
+      return result.data
     }
+    const checkAdmin = async ()=>{
+      var result = await axios.post(`${API}/admin/login`,{headers:{adminId: rollNo, password:password}})
+      console.log(result.data)
+      return result.data 
+    }
+
+    try {
+      const userExistsAsStudent = await checkUser();
+      
+      console.log(userExistsAsStudent)
+      if (userExistsAsStudent) {
+        const details = await axios.get(`${API}/students/get`, { headers: { 'rollNumber': rollNo } });
+        const name = details.data[0].student_name;
+        navigation.navigate('Home', { username: name });
+      } else {
+        // const userExistsAsAdmin = await checkAdmin();
+        if (rollNo=='1' && password== 'Supreme.@12') {
+          navigation.navigate('AdminHome');
+        } else {
+          // Neither user nor admin exists
+          alert('Invalid Roll No or Password');
+        }
+      }
+    } catch (error) {
+      // Handle any errors that occurred during the API call
+      console.error('Error logging in:', error);
+      alert('Error logging in. Please try again later.');
+    } finally {
+      // Clear input fields
+      setPassword('');
+      setRollNo('');
+    }
+
+    // if (rollNo === '2020' && password === 'admin') {
+    //   // Navigate to admin screen
+    //   navigation.navigate('AdminHome');
+    // } else if (checkUser()) {
+    //   // Navigate to user home screen
+    //   // checkUser(rollNo,password)
+    //   // checkUser()
+    //   console.log('user')
+    //   navigation.navigate('Home', { username: "Guest" });
+    // }
   };
 
   return (
@@ -37,6 +87,16 @@ const LoginScreen = () => {
       </View>
       <View style={styles.contentContainer}>
         <Text style={styles.title}>Anna University</Text>
+        <Text>Select an option:</Text>
+        <Picker
+          selectedValue={selectedValue}
+          onValueChange={(itemValue, itemIndex) => setSelectedValue(itemValue)}
+        >
+          <Picker.Item label="Option 1" value="option1" />
+          <Picker.Item label="Option 2" value="option2" />
+          <Picker.Item label="Option 3" value="option3" />
+        </Picker>
+        <Text>You selected: {selectedValue}</Text>
         <Image source={require("../assets/annaunivlogo.png")} style={styles.image} />
         <TextInput
           style={styles.input}

@@ -92,6 +92,7 @@ const ElectricalScreen = () => {
        
       );
       const uri = result.assets[0].uri;
+      console.log(result)
       compressUriToBase64(uri).then((compressedBase64) => {
         console.log('Compressed Base64 representation:', compressedBase64);
       });
