@@ -1,26 +1,42 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect,useContext } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, TextInput, ScrollView, Alert } from 'react-native';
 import {useNavigation} from '@react-navigation/native'
+import axios from 'axios'
+import API from '../../config';
+import {IssueContext} from '../Context/issueCreationContext'
 
-const WifiScreen = () => {
+const WifiScreen = ({navigation}) => {
+  const {issue,issueDispatch}=useContext(IssueContext)
+
   const [selectedIssue, setSelectedIssue] = useState(null);
   const [additionalDetails, setAdditionalDetails] = useState('');
   const [requestSubmitted, setRequestSubmitted] = useState(false);
 
-  const navigation = useNavigation(); // Hook for navigation
+  // const navigation = useNavigation(); // Hook for navigation
 
   const issues = ['Range need to be increased', 'Not working', 'Other'];
 
-  const handleIssueSelection = (issue) => {
+  // const handleIssueSelection = (issue) => {
+  //   setSelectedIssue(issue);
+  //   if (issue !== 'Other') {
+  //     // Clear additional details if issue is not "Other"
+  //     setAdditionalDetails('');
+  //   }
+  //   setRequestSubmitted(false); // Hide success message
+  // };
+
+  const handleIssueSelection = async (issue) => {
     setSelectedIssue(issue);
-    if (issue !== 'Other') {
-      // Clear additional details if issue is not "Other"
-      setAdditionalDetails('');
-    }
-    setRequestSubmitted(false); // Hide success message
+    await issueDispatch({type:'setIssueType', payload:{issueType:issue}})
+    // console.log(issue)
   };
 
-  const handleSubmit = () => {
+  const handleAdditionalDetails = async (details)=>{
+    setAdditionalDetails(details);
+    await issueDispatch({type:'setAdditionalDetails',payload:{issueDescription:details}})
+  }
+
+  const handleSubmit = async () => {
     if (!selectedIssue) {
       // If no issue is selected, show alert message
       Alert.alert(
@@ -40,28 +56,50 @@ const WifiScreen = () => {
       );
       return;
     }
+    const submit = async ()=>{
+      var result = await axios.post(`${API}/issues/insert`,issue)
+      console.log(result.data)
+      return result.data 
+    }
+    try{
+        const result = await submit()
+        await issueDispatch({type:'issueCreation'})
+          Alert.alert(
+            'Request Submitted',
+            'We will look into your complaint and respond shortly.',
+            [{ text: 'OK', onPress: () => {setSelectedIssue(null), setAdditionalDetails(''),navigation.navigate('Home') }}]
+          );
+        // Alert.alert(
+        //   'Request Submitted',
+        //   'We will look into your complaint and respond shortly.',
+        //   [{ text: 'OK',   }}]
+        // );
+        // await issueDispatch({type:'issueCreation'})
+    }catch(error){
+      console.error(`Error occured : ${error}`)
+    }
 
     // Logic to submit the wifi issue
-    console.log('Selected Issue:', selectedIssue);
-    console.log('Additional Details:', additionalDetails);
-    // You can add further logic here to send the issue report to backend or maintenance staff
+    // console.log('Selected Issue:', selectedIssue);
+    // console.log('Additional Details:', additionalDetails);
+    // // You can add further logic here to send the issue report to backend or maintenance staff
 
-    // Simulating submission by setting requestSubmitted to true
-    setRequestSubmitted(true);
-     // Reset selectedIssue and additionalDetails after submitting
-    setSelectedIssue(null);
-    setAdditionalDetails('');
+    // // Simulating submission by setting requestSubmitted to true
+    // setRequestSubmitted(true);
+    //  // Reset selectedIssue and additionalDetails after submitting
+    // setSelectedIssue(null);
+    // setAdditionalDetails('');
   };
 
-  useEffect(() => {
-    if (requestSubmitted) {
-      Alert.alert(
-        'Response Success',
-        'Admin will resolve the complaint shortly',
-        [{ text: 'OK', onPress: () => {setSelectedIssue(null),navigation.navigate('Home',{ username: "Guest" }) }}]
-      );
-    }
-  }, [requestSubmitted]);
+  // useEffect(() => {
+  //   if (requestSubmitted) {
+  //     Alert.alert(
+  //       'Response Success',
+  //       'Admin will resolve the complaint shortly',
+  //       [{ text: 'OK', onPress: () => {setSelectedIssue(null),navigation.navigate('Home',{ username: "Guest" }) }}]
+  //     );
+  //   }
+  // }, [requestSubmitted]);
 
   return (
     <View style={styles.container}>
@@ -84,7 +122,7 @@ const WifiScreen = () => {
               <Text style={styles.heading}>Enter Other Issue:</Text>
               <TextInput
                 style={styles.input}
-                onChangeText={(text) => setAdditionalDetails(text)}
+                onChangeText={(text) => handleAdditionalDetails(text)}
                 value={additionalDetails}
                 placeholder="Enter Details here..."
                 multiline

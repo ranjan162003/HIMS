@@ -1,24 +1,38 @@
-import React, { useState } from 'react';
+import React, { useState,useContext } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, TextInput, Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import {IssueContext} from '../Context/issueCreationContext'
+import axios from 'axios'
+import API from '../../config';
 
 
-const OtherSectionScreen = () => {
-  const navigation  = useNavigation();
+const OtherSectionScreen = ({navigation}) => {
+
+  const {issue,issueDispatch}=useContext(IssueContext)
 
   const [selectedService, setSelectedService] = useState(null);
   const [additionalDetails, setAdditionalDetails] = useState('');
-  const [requestSubmitted, setRequestSubmitted] = useState(false);
+  
 
   const services = ['Water', 'Mosquito', 'Heater'];
 
-  const handleServiceSelection = (service) => {
-    setSelectedService(service);
-    setAdditionalDetails(''); // Clear additional details when service changes
-    setRequestSubmitted(false); // Hide success message
-  };
+  // const handleServiceSelection = (service) => {
+  //   setSelectedService(service);
+  //   setAdditionalDetails('');
+  // };
 
-  const handleSubmit = () => {
+  const handleService = async (service)=>{
+    setSelectedService(service);
+    await issueDispatch({type:'setIssueCategory',payload:{issueCategory:service}})
+    console.log(issue)
+  }
+
+  const handleAdditionalDetails = async (details)=>{
+    setAdditionalDetails(details);
+    await issueDispatch({type:'setAdditionalDetails',payload:{issueDescription:details}})
+  }
+
+  const handleSubmit = async () => {
     if (!selectedService || additionalDetails.trim() === '') {
       Alert.alert(
         'Incomplete Form',
@@ -28,21 +42,23 @@ const OtherSectionScreen = () => {
       return;
     }
 
-    // Logic to submit the complaint
-    console.log('Selected Service:', selectedService);
-    console.log('Additional Details:', additionalDetails);
+    const submit = async ()=>{
+      var result = await axios.post(`${API}/issues/insert`,issue)
+      console.log(result.data)
+      return result.data 
+    }
+    try{
+      const result = await submit()
+      Alert.alert(
+        'Request Submitted',
+        'We will look into your complaint and respond shortly.',
+        [{ text: 'OK', onPress: () => {setSelectedService(null), setAdditionalDetails(''),navigation.navigate('Home')  }}]
+      );
+      await issueDispatch({type:'issueCreation'})
+    }catch(error){
+      console.error(`Error occured : ${error}`)
+    }
 
-    // Simulating submission by setting requestSubmitted to true
-    setRequestSubmitted(true);
-
-    // Show success message
-    Alert.alert(
-      'Request Submitted',
-      'We will look into your complaint and respond shortly.',
-      [{ text: 'OK', onPress: () => {setSelectedService(null), setAdditionalDetails(''),navigation.navigate('Home',{ username: "Guest" })  }}]
-    );
-
-    // Clear additional details after submission
   };
 
   return (
@@ -53,18 +69,18 @@ const OtherSectionScreen = () => {
           <TouchableOpacity
             key={index}
             style={[styles.button, selectedService === service && styles.selectedButton]}
-            onPress={() => handleServiceSelection(service)}
+            onPress={() => handleService(service)}
           >
             <Text style={styles.buttonText}>{service}</Text>
           </TouchableOpacity>
         ))}
       </View>
-      {(!requestSubmitted && selectedService) && (
+      {(selectedService) && (
         <>
           <Text style={styles.heading}>Additional Details:</Text>
           <TextInput
             style={styles.input}
-            onChangeText={(text) => setAdditionalDetails(text)}
+            onChangeText={(text) => handleAdditionalDetails(text)}
             value={additionalDetails}
             placeholder="Enter additional details..."
             multiline

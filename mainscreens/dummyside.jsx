@@ -1,8 +1,12 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import React, { useState,useContext } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, Alert,Modal } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { MaterialIcons } from '@expo/vector-icons';
+import {IssueContext} from './Context/issueCreationContext'
+
 const Sidebar = () => {
+  let [modalVisible,setModalVisible]=useState(false)
+  const {issue,issueDispatch}=useContext(IssueContext)
   const navigation  = useNavigation();
   const handleLogout = () => {
     Alert.alert(
@@ -32,8 +36,11 @@ const Sidebar = () => {
     navigation.navigate('StatusScreen');
   };
 
+  // const handleProfileClick = () => {
+  //   navigation.navigate('Profile');
+  // };
   const handleProfileClick = () => {
-    navigation.navigate('Profile');
+    setModalVisible(true);
   };
   return (
     <View style={styles.container}>
@@ -49,6 +56,33 @@ const Sidebar = () => {
       <TouchableOpacity style={styles.menuItem} onPress={handleLogout}>
         <Text style={styles.menuItemText}>Logout</Text>
       </TouchableOpacity>
+
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={modalVisible}
+        onRequestClose={() => {
+          Alert.alert("Modal has been closed.");
+          setModalVisible(!modalVisible);
+        }}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalHeading}>Student Details</Text>
+            <View style={styles.table}>
+              {Object.entries(issue).map(([key, value]) => (
+                <View style={styles.row} key={key}>
+                  <Text style={styles.label}>{key}:</Text>
+                  <Text style={styles.value}>{value}</Text>
+                </View>
+              ))}
+            </View>
+            <TouchableOpacity style={styles.closeButton} onPress={() => setModalVisible(false)}>
+              <Text style={styles.closeButtonText}>Close</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 };

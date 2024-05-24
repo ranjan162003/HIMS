@@ -1,16 +1,43 @@
 import React from 'react';
-import { View, Text, StyleSheet, StatusBar, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, StatusBar, TouchableOpacity, Alert } from 'react-native';
 import { FontAwesome } from '@expo/vector-icons'; // Import FontAwesome from Expo vector icons library
 import { MaterialIcons } from '@expo/vector-icons'; // Import MaterialIcons for carpenter icon
 import moment from 'moment'; // Import moment library for date formatting
-import {useNavigation} from '@react-navigation/native'
+import { useNavigation } from '@react-navigation/native';
+import { AntDesign } from '@expo/vector-icons';
+
 const AdminHome = () => {
   const todayDate = moment().format('MMMM D, YYYY'); // Format today's date
+  const navigation = useNavigation();
 
   // Function to handle button press and navigate to another screen
-  const navigation = useNavigation();
   const handleButtonPress = (screenName) => {
     navigation.navigate(screenName); // Navigate to the specified screen
+  };
+
+  // Function to handle logout
+  const handleLogout = () => {
+    Alert.alert(
+      'Logout',
+      'Are you sure you want to logout?',
+      [
+        {
+          text: 'No',
+          style: 'cancel',
+        },
+        {
+          text: 'Yes',
+          onPress: () => {
+            // Navigate to the login page if the user confirms
+            navigation.navigate('Login');
+            setTimeout(() => {
+              Alert.alert('Logged Out', 'You have been logged out.');
+            }, 500); // Show the alert after a short delay
+          },
+        },
+      ],
+      { cancelable: false }
+    );
   };
 
   return (
@@ -29,34 +56,28 @@ const AdminHome = () => {
 
       {/* Buttons */}
       <View style={styles.buttonContainer}>
-        {/* Button  View Complaint Section */}
-        <TouchableOpacity style={styles.button} onPress={()=> handleButtonPress('ViewComplaint')}>
+        {/* Button View Complaint Section */}
+        <TouchableOpacity style={styles.button} onPress={() => handleButtonPress('ViewComplaint')}>
           <MaterialIcons name="view-module" size={30} color="black" />
           <Text style={styles.buttonText}>View Complaints</Text>
         </TouchableOpacity>
 
-        {/* Button USer CRUD Section */}
-        <TouchableOpacity style={styles.button} onPress={()=> handleButtonPress('UserUpdation')}>
-        <MaterialIcons name="create" size={30} color="black" />
-          <Text style={styles.buttonText}>Create/update/delete user</Text>
+        {/* Button User CRUD Section */}
+        <TouchableOpacity style={styles.button} onPress={() => handleButtonPress('UserUpdation')}>
+          <MaterialIcons name="create" size={30} color="black" />
+          <Text style={styles.buttonText}>CRUD user</Text>
         </TouchableOpacity>
 
-        {/* Button Wifi Section */}
-        <TouchableOpacity style={styles.button} onPress={()=> handleButtonPress('WifiScreen')}>
-          <FontAwesome name="wifi" size={30} color="black" />
-          <Text style={styles.buttonText}>create/delete compalint</Text>
+        {/* Button View Suggestions */}
+        <TouchableOpacity style={[styles.button, styles.viewSuggestionsButton]} onPress={() => handleButtonPress('SuggestionPage')}>
+          <AntDesign name="customerservice" size={30} color="black" />
+          <Text style={styles.buttonText}>View Suggestions</Text>
         </TouchableOpacity>
 
-        {/* Button Other Section */}
-        <TouchableOpacity style={styles.button} onPress={()=> handleButtonPress('OtherSectionScreen')}>
-          <FontAwesome name="plus" size={30} color="black" />
-          <Text style={styles.buttonText}>Others</Text>
-        </TouchableOpacity>
-
-        {/* Button Request Section */}
-        <TouchableOpacity style={styles.buttonforrequest} onPress={()=> handleButtonPress('RequestSectionScreen')}>
-        <FontAwesome name="commenting" size={30} color="black" />
-          <Text style={styles.buttonText}>Request</Text>
+        {/* Logout Button */}
+        <TouchableOpacity style={styles.button} onPress={handleLogout}>
+          <FontAwesome name="sign-out" size={30} color="black" />
+          <Text style={styles.buttonText}>Logout</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -73,12 +94,12 @@ const styles = StyleSheet.create({
   welcomeText: {
     fontSize: 35,
     marginBottom: 1,
-    color:'brown',
+    color: 'brown',
   },
   usernameText: {
     fontSize: 40,
     fontWeight: 'bold',
-    color:'brown',
+    color: 'brown',
     marginBottom: 5,
   },
   dateText: {
@@ -86,38 +107,28 @@ const styles = StyleSheet.create({
     marginBottom: 35,
   },
   buttonContainer: {
-    flex: 1,
     flexDirection: 'row',
     justifyContent: 'space-between',
     flexWrap: 'wrap',
-    // marginTop:150
   },
   button: {
     width: '48%', // Adjust button width as needed
     height: '100%',
-    aspectRatio: 7/7.5, // Maintain aspect ratio for square buttons
+    aspectRatio: 1,
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: '#f0f0f0',
     borderRadius: 10,
     marginBottom: 10,
- 
   },
-  buttornText: {
-    fontSize: 16, // Adjust font size as needed
+  buttonText: {
+    fontSize: 16,
     marginTop: 5,
-    textAlign: 'center', // Center align text
+    textAlign: 'center',
   },
-  buttonforrequest:{
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#f0f0f0',
-    width:'100%',
-    borderRadius: 10,
-    marginBottom: 10,
-    height: '15%',
-  
-  }
+  viewSuggestionsButton: {
+    width: '48%', // Full width for the "View Suggestions" button
+  },
 });
 
 export default AdminHome;

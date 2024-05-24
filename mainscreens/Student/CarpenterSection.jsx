@@ -1,8 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect,useContext } from 'react';
 import { useNavigation } from '@react-navigation/native';
 import { View, Text, StyleSheet, TouchableOpacity, TextInput, ScrollView, Alert } from 'react-native';
+import axios from 'axios'
+import API from '../../config';
+import {IssueContext} from '../Context/issueCreationContext'
 
-const CarpenterScreen = () => {
+const CarpenterScreen = ({navigation}) => {
+  const {issue,issueDispatch}=useContext(IssueContext)
   const [selectedAccessory, setSelectedAccessory] = useState(null);
   const [selectedIssue, setSelectedIssue] = useState(null);
   const [additionalDetails, setAdditionalDetails] = useState('');
@@ -11,61 +15,112 @@ const CarpenterScreen = () => {
   const accessories = ['Chair', 'Table', 'Window', 'Bed', 'Door', 'Other']; // List of carpentry accessories including "Other"
   const issues = ['Broken', 'Wobbly', 'Scratched','Other']; // Common issues for carpentry accessories
 
-  const navigation = useNavigation();
+  // const navigation = useNavigation();
 
-  const handleAccessorySelection = (accessory) => {
+  // const handleAccessorySelection = (accessory) => {
+  //   setSelectedAccessory(accessory);
+  //   setSelectedIssue(null); // Reset selected issue when accessory changes
+  //   setAdditionalDetails(''); // Clear additional details
+  //   setRequestSubmitted(false); // Hide success message
+  // };
+
+  const handleAccessorySelection= async (accessory)=>{
     setSelectedAccessory(accessory);
-    setSelectedIssue(null); // Reset selected issue when accessory changes
-    setAdditionalDetails(''); // Clear additional details
-    setRequestSubmitted(false); // Hide success message
-    
-    
-  };
+    await issueDispatch({type:'setAccessory', payload:{accessory:accessory}})
+    console.log(issue)
+  }
 
-  const handleIssueSelection = (issue) => {
+  // const handleIssueSelection = (issue) => {
+  //   setSelectedIssue(issue);
+  //   setAdditionalDetails(''); // Reset additional details when issue changes
+  //   setRequestSubmitted(false); // Hide success message
+  // };
+  const handleIssueSelection = async (issue) => {
     setSelectedIssue(issue);
-    setAdditionalDetails(''); // Reset additional details when issue changes
-    setRequestSubmitted(false); // Hide success message
+    await issueDispatch({type:'setIssueType', payload:{issueType:issue}})
+    // console.log(issue)
   };
 
-  const handleSubmit = () => {
-    if (!selectedIssue) {
-      // If no issue is selected, show alert message
-      Alert.alert(
-        'No Issue Selected',
-        'Please select an issue.',
-        [{ text: 'OK', style: 'destructive' }]
-      );
+  const handleAdditionalDetails = async (details)=>{
+    setAdditionalDetails(details);
+    await issueDispatch({type:'setAdditionalDetails',payload:{issueDescription:details}})
+  }
+
+
+  const handleSubmit = async () => {
+    // if (!selectedIssue) {
+    //   // If no issue is selected, show alert message
+    //   Alert.alert(
+    //     'No Issue Selected',
+    //     'Please select an issue.',
+    //     [{ text: 'OK', style: 'destructive' }]
+    //   );
+    //   // return;
+    // }
+    // if ((selectedIssue === 'Other' && additionalDetails.trim() === '')||(selectedAccessory === 'Other' && additionalDetails.trim() === '')) {
+    //   // If additional details are not provided, show alert in red
+    //   Alert.alert(
+    //     'Other Section Not Filled',
+    //     'Please fill in the details.',
+    //     [{ text: 'OK', style: 'destructive' }]
+    //   );
+    //   // return;
+    // }
+    if ((selectedAccessory === 'Other' && additionalDetails.trim() === '') || (selectedIssue === 'Other' && additionalDetails.trim() === '')) {
+      await new Promise(resolve => {
+        Alert.alert(
+          'Other Section Not Filled',
+          'Please fill in the details.',
+          [{ text: 'OK', style: 'destructive', onPress: resolve }]
+        );
+      }); // Scroll to the additional details section
+      scrollViewRef.current.scrollToEnd({ animated: true });
       return;
+      // return;
     }
-    if ((selectedIssue === 'Other' && additionalDetails.trim() === '')||(selectedAccessory === 'Other' && additionalDetails.trim() === '')) {
-      // If additional details are not provided, show alert in red
-      Alert.alert(
-        'Other Section Not Filled',
-        'Please fill in the details.',
-        [{ text: 'OK', style: 'destructive' }]
-      );
-      return;
+    const submit = async ()=>{
+      var result = await axios.post(`${API}/issues/insert`,issue)
+      console.log(result.data)
+      return result.data 
+    }
+    try{
+        const result = await submit()
+        await issueDispatch({type:'issueCreation'})
+        await new Promise(resolve => {
+          Alert.alert(
+            'Request Submitted',
+            'We will look into your complaint and respond shortly.',
+            [{ text: 'OK', onPress: () => {setSelectedIssue(null),setSelectedAccessory(null), setAdditionalDetails(''),navigation.navigate('Home') }}]
+          );
+        });
+        // Alert.alert(
+        //   'Request Submitted',
+        //   'We will look into your complaint and respond shortly.',
+        //   [{ text: 'OK',   }}]
+        // );
+        // await issueDispatch({type:'issueCreation'})
+    }catch(error){
+      console.error(`Error occured : ${error}`)
     }
   
     // Logic to submit the carpentry issue
-    console.log('Selected Accessory:', selectedAccessory);
-    console.log('Selected Issue:', selectedIssue);
-    console.log('Additional Details:', additionalDetails);
+    // console.log('Selected Accessory:', selectedAccessory);
+    // console.log('Selected Issue:', selectedIssue);
+    // console.log('Additional Details:', additionalDetails);
     // You can add further logic here to send the issue report to backend or maintenance staff
 
     // Simulating submission by setting requestSubmitted to true
-    setRequestSubmitted(true);
+    // setRequestSubmitted(true);
   };
-  useEffect(() => {
-    if (requestSubmitted) {
-      Alert.alert(
-        'Response Success',
-        'Admin will resolve the complaint shortly',
-        [{ text: 'OK', onPress: () => {setSelectedAccessory(null), navigation.navigate('Home', { username: "Guest" })} }]
-      );
-    }
-  }, [requestSubmitted]);
+  // useEffect(() => {
+  //   if (requestSubmitted) {
+  //     Alert.alert(
+  //       'Response Success',
+  //       'Admin will resolve the complaint shortly',
+  //       [{ text: 'OK', onPress: () => {setSelectedAccessory(null), navigation.navigate('Home', { username: "Guest" })} }]
+  //     );
+  //   }
+  // }, [requestSubmitted]);
 
   return (
     <View style={styles.container}>
@@ -94,7 +149,7 @@ const CarpenterScreen = () => {
                 <Text style={styles.heading}>Additional Details:</Text>
                 <TextInput
                   style={styles.input}
-                  onChangeText={(text) => setAdditionalDetails(text)}
+                  onChangeText={(text) => handleAdditionalDetails(text)}
                   value={additionalDetails}
                   placeholder="Enter complaint details ..."
                   multiline

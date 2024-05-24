@@ -1,14 +1,18 @@
-import React, { useState } from 'react';
+import React, { useState,useContext } from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-
+import axios from 'axios'
+import API from '../../config';
+import {IssueContext} from '../Context/issueCreationContext'
 const RequestSectionScreen = () => {
+
+  const {issue,issueDispatch}=useContext(IssueContext)
   const [requestText, setRequestText] = useState('');
 
   const navigation = useNavigation();
 
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     
     if (requestText.trim() === '') {
       Alert.alert('Empty Request', 'Please enter your request.', [{ text: 'OK' }]);
@@ -16,17 +20,37 @@ const RequestSectionScreen = () => {
     }
     
     // Logic to submit the request to backend or handle it accordingly
-    console.log('Request Submitted:', requestText);
+    // console.log('Request Submitted:', requestText);
 
     // Clear the text input after submission
-    setRequestText('');
-
+    // setRequestText('');
+    
+    const submit = async ()=>{
+      let req={rollNumber: issue.rollNumber,requestDescription:requestText}
+      var result = await axios.post(`${API}/request/insert`,req)
+      console.log(result.data)
+      return result.data 
+    }
+    try{
+      const result = await submit()
+      // await issueDispatch({type:'issueCreation'})
+      await new Promise(resolve => {
+        Alert.alert(
+          'Request Submitted',
+          'Admin will look into your request and respond shortly.',
+          [{ text: 'OK', onPress: () => {navigation.navigate('Home')} }]
+        );
+      });
+      // Alert.alert(
+      //   'Request Submitted',
+      //   'We will look into your complaint and respond shortly.',
+      //   [{ text: 'OK',   }}]
+      // );
+      // await issueDispatch({type:'issueCreation'})
+  }catch(error){
+    console.error(`Error occured : ${error}`)
+  }
     // Show success message
-    Alert.alert(
-      'Request Submitted',
-      'Admin will look into your request and respond shortly.',
-      [{ text: 'OK', onPress: () => {navigation.navigate('Home',{ username: "Guest" })} }]
-    );
   };
 
   return (

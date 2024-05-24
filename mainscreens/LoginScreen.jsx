@@ -1,69 +1,91 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet,Picker,x Image } from 'react-native';
+import React, { useEffect, useState,useContext } from 'react';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import axios from 'axios'
-import dotenv from 'dotenv'
+import {Picker} from '@react-native-picker/picker';
+import {IssueContext} from './Context/issueCreationContext'
 // import nodemailer from 'nodemailer'
 import API from '../config';
 // import product from '../meta'
 
-const LoginScreen = () => {
-  const navigation = useNavigation();
-  const [selectedValue, setSelectedValue] = useState('');
+const LoginScreen = ({navigation}) => {
+  // const navigation = useNavigation();
+  const {issue,issueDispatch}=useContext(IssueContext)
+
+  // useEffect(()=>{
+  //   async function dummy(){
+  //     await issueDispatch({type:'userLogout'})
+  //   }
+  //   dummy()
+  // },[])
+
+  // console.log(issue)
+
+  const [selectedValue, setSelectedValue] = useState('Student');
   
   const [rollNo, setRollNo] = useState('');
   const [password, setPassword] = useState('');
-  useEffect(()=>{
-    console.log(12)
-  },[])
+
 
   const handleLogin = async () => {
     if (!rollNo || !password) {
-      alert('Please enter both Roll No and Password');
+      alert('Please enter both fields');
       return;
     }
 
-    // console.log('Roll No:', rollNo);
-    // console.log('Password:', password);
-    let student={'rollNumber':`${rollNo}`,'password':`${password}`}
 
-    const checkUser = async ()=> {
-      var result = await axios.post(`${API}/students/login`,student)
-      console.log(result.data)
-      return result.data
-    }
-    const checkAdmin = async ()=>{
-      var result = await axios.post(`${API}/admin/login`,{headers:{adminId: rollNo, password:password}})
-      console.log(result.data)
-      return result.data 
-    }
+    if (selectedValue=='Student'){
+      let student={'rollNumber':`${rollNo}`,'password':`${password}`}
 
-    try {
-      const userExistsAsStudent = await checkUser();
-      
-      console.log(userExistsAsStudent)
-      if (userExistsAsStudent) {
-        const details = await axios.get(`${API}/students/get`, { headers: { 'rollNumber': rollNo } });
-        const name = details.data[0].student_name;
-        navigation.navigate('Home', { username: name });
-      } else {
-        // const userExistsAsAdmin = await checkAdmin();
-        if (rollNo=='1' && password== 'Supreme.@12') {
-          navigation.navigate('AdminHome');
-        } else {
-          // Neither user nor admin exists
-          alert('Invalid Roll No or Password');
-        }
+      const checkUser = async ()=> {
+        // var result = await axios.post(`${API}/students/login`,student)
+        // console.log(result.data)
+        // return result.data
+        return true
       }
-    } catch (error) {
-      // Handle any errors that occurred during the API call
-      console.error('Error logging in:', error);
-      alert('Error logging in. Please try again later.');
-    } finally {
-      // Clear input fields
-      setPassword('');
-      setRollNo('');
+      try {
+        const userExistsAsStudent = await checkUser()
+        if (userExistsAsStudent) {
+          const details = await axios.get(`${API}/students/get`, { headers: { 'rollNumber': rollNo } });
+          const name = details.data[0].student_name;
+
+          await issueDispatch({type:'userLogin',payload:{rollNumber:rollNo,name:name}})
+          console.log(issue)
+
+          // navigation.navigate('Home', { username: name });
+          navigation.navigate('Home')
+        } 
+      } catch (error) {
+        // consol.log(error)
+        console.error('Error logging in:', error);
+        alert(`Error logging in. Please try again later.(${error})`);
+      } finally {
+        setPassword('');
+        setRollNo('');
+      }
+    }else{
+      const checkAdmin = async ()=>{
+        // var result = await axios.get(`${API}/admin/login`,{headers:{adminId: rollNo, password:password}})
+        // console.log(result.data)
+        // return result.data 
+        return true
+      }
+      try {
+        const userExistsAsAdmin = await checkAdmin()
+        if (userExistsAsAdmin) {
+          navigation.navigate('AdminHome');
+        } 
+      } catch (error) {
+        console.log(error)
+        console.error('Error logging in:', error);
+        alert('Error logging in. Please try again later.');
+      } finally {
+        setPassword('');
+        setRollNo('');
+      }
     }
+
+    
 
     // if (rollNo === '2020' && password === 'admin') {
     //   // Navigate to admin screen
@@ -90,21 +112,28 @@ const LoginScreen = () => {
         <Text>Select an option:</Text>
         <Picker
           selectedValue={selectedValue}
+          style={styles.input}
           onValueChange={(itemValue, itemIndex) => setSelectedValue(itemValue)}
         >
-          <Picker.Item label="Option 1" value="option1" />
-          <Picker.Item label="Option 2" value="option2" />
-          <Picker.Item label="Option 3" value="option3" />
+          <Picker.Item label="Student" value="Student" />
+          <Picker.Item label="Admin" value="Admin" />
         </Picker>
         <Text>You selected: {selectedValue}</Text>
         <Image source={require("../assets/annaunivlogo.png")} style={styles.image} />
-        <TextInput
+        {selectedValue=='Student' && <TextInput
           style={styles.input}
           placeholder="Roll No"
           onChangeText={text => setRollNo(text)}
           value={rollNo}
           keyboardType="numeric"
-        />
+        />}
+        {selectedValue=='Admin' && <TextInput
+          style={styles.input}
+          placeholder="Admin ID"
+          onChangeText={text => setRollNo(text)}
+          value={rollNo}
+          keyboardType="numeric"
+        />}
         <TextInput
           style={styles.input}
           placeholder="Password"

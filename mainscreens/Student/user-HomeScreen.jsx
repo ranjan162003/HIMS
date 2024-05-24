@@ -1,13 +1,15 @@
-import React, { useState } from 'react';
+import React, { useState,useContext } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { FontAwesome } from '@expo/vector-icons';
 import { MaterialIcons } from '@expo/vector-icons';
 import moment from 'moment';
 import { useNavigation } from '@react-navigation/native';
-import Sidebar from './Sidebar'; // Import Sidebar component
+import {IssueContext} from '../Context/issueCreationContext'
+import Sidebar from '../Sidebar'; // Import Sidebar component
 
 const HomeScreen = ({ route }) => {
-  const { username } = route.params;
+  const {issue,issueDispatch}=useContext(IssueContext)
+  // const { username } = issue.name
   const todayDate = moment().format('MMMM D, YYYY');
 
   const navigation = useNavigation();
@@ -17,8 +19,13 @@ const HomeScreen = ({ route }) => {
   const toggleMenu = () => {
     setMenuVisible(!isMenuVisible);
   };*/}
+  // useEffect()
 
-  const handleButtonPress = (screenName) => {
+  const handleButtonPress = async (screenName) => {
+    if (screenName!='OtherSectionScreen' && screenName!='RequestSectionScreen'){
+      await issueDispatch({type:'setIssueCategory',payload:{issueCategory:screenName}})
+      console.log(issue)
+    }
     navigation.navigate(screenName);
   };
 
@@ -32,7 +39,7 @@ const HomeScreen = ({ route }) => {
 
   return (
     <View style={styles.container}>
-     { /*{isMenuVisible && (
+    { /*{isMenuVisible && (
         <Sidebar onLogout={handleLogout} onStatusClick={handleStatusClick} />
       )}
 
@@ -42,22 +49,22 @@ const HomeScreen = ({ route }) => {
 
       <Text style={styles.welcomeText}>Welcome</Text>
 
-      <Text style={styles.usernameText}>{username}</Text>
+      <Text style={styles.usernameText}>{issue.name}</Text>
 
       <Text style={styles.dateText}>{todayDate}</Text>
 
       <View style={styles.buttonContainer}>
-        <TouchableOpacity style={styles.button} onPress={() => handleButtonPress('ElectricalScreen')}>
+        <TouchableOpacity style={styles.button} onPress={() => handleButtonPress('Electrical')}>
           <FontAwesome name="bolt" size={30} color="black" />
           <Text style={styles.buttonText}>Electrical</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.button} onPress={() => handleButtonPress('CarpenterScreen')}>
+        <TouchableOpacity style={styles.button} onPress={() => handleButtonPress('Carpenter')}>
           <MaterialIcons name="carpenter" size={30} color="black" />
           <Text style={styles.buttonText}>Carpenter</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.button} onPress={() => handleButtonPress('WifiScreen')}>
+        <TouchableOpacity style={styles.button} onPress={() => handleButtonPress('Wifi')}>
           <FontAwesome name="wifi" size={30} color="black" />
           <Text style={styles.buttonText}>Wi-fi</Text>
         </TouchableOpacity>
